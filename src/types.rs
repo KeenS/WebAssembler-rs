@@ -42,14 +42,6 @@ pub struct MemoryType {
 }
 
 #[derive(Debug, Clone)]
-pub enum ExternalKind {
-    Function = 0,
-    Table = 1,
-    Memory = 2,
-    Global = 3,
-}
-
-#[derive(Debug, Clone)]
 pub struct ResizableLimits {
     pub flags: u32,
     pub initial: u32,
@@ -140,13 +132,6 @@ impl Dump for MemoryType {
     }
 }
 
-impl Dump for ExternalKind {
-    fn dump(&self, buf: &mut Vec<u8>) -> usize {
-        write_uint8(buf, self.clone() as u8)
-    }
-}
-
-
 
 impl Dump for ResizableLimits {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
@@ -174,14 +159,58 @@ impl Dump for InitExpr {
     }
 }
 
-pub type TypeIndex = u32;
-pub type ImportIndex = u32;
-pub type FunctionIndex = u32;
-pub type TableIndex = u32;
-pub type MemoryIndex = u32;
-pub type GlobalIndex = u32;
-pub type ExportIndex = u32;
-pub type ElementIndex = u32;
-pub type CodeIndex = u32;
-pub type DataIndex = u32;
+use std::ops::Deref;
+#[derive(Debug, Clone)]
+pub struct TypeIndex(u32);
+impl Deref for TypeIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+#[derive(Debug, Clone)]
+pub struct ImportIndex(u32);
+impl Deref for ImportIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+#[derive(Debug, Clone)]
+pub struct FunctionIndex(u32);
+impl Deref for FunctionIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+#[derive(Debug, Clone)]
+pub struct TableIndex(u32);
+impl Deref for TableIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+#[derive(Debug, Clone)]
+pub struct MemoryIndex(u32);
+impl Deref for MemoryIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+#[derive(Debug, Clone)]
+pub struct GlobalIndex(u32);
+impl Deref for GlobalIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+#[derive(Debug, Clone)]
+pub struct ExportIndex(u32);
+impl Deref for ExportIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+#[derive(Debug, Clone)]
+pub struct ElementIndex(u32);
+impl Deref for ElementIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+#[derive(Debug, Clone)]
+pub struct CodeIndex(u32);
+impl Deref for CodeIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+#[derive(Debug, Clone)]
+pub struct DataIndex(u32);
+impl Deref for DataIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
 
+pub mod internal {
+    use types::*;
+    macro_rules! impl_new {
+        ($name: tt) => {
+            impl $name {
+                pub fn new(u: u32) -> Self {
+                    $name(u)
+                }
+            }
+        }
+    }
+
+    impl_new!(TypeIndex);
+    impl_new!(ImportIndex);
+    impl_new!(FunctionIndex);
+    impl_new!(TableIndex);
+    impl_new!(MemoryIndex);
+    impl_new!(GlobalIndex);
+    impl_new!(ExportIndex);
+    impl_new!(ElementIndex);
+    impl_new!(CodeIndex);
+    impl_new!(DataIndex);
+}

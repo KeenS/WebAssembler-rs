@@ -58,9 +58,9 @@ impl Dump for Module {
         do_section!(0x05, self.memories);
         do_section!(0x06, self.globals);
         do_section!(0x07, self.exports);
-        self.start.map(|index| {
+        self.start.as_ref().map(|index| {
             size += write_uint8(buf, 0x08);
-            size += write_varuint32(buf, index)
+            size += write_varuint32(buf, **index)
         }).unwrap_or(());
         do_section!(0x09, self.elements);
         do_section!(0x0a, self.codes);
@@ -110,7 +110,7 @@ impl Dump for ImportKind {
         match self {
             &Function(ref id) => {
                 size += write_uint8(buf, 0);
-                size += write_varuint32(buf, *id);
+                size += write_varuint32(buf, **id);
                 size
             },
             &Table(ref tbl) => {
@@ -141,7 +141,7 @@ pub struct Function(pub TypeIndex);
 
 impl Dump for Function {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
-        write_varuint32(buf, self.0)
+        write_varuint32(buf, *self.0)
     }
 }
 
@@ -165,8 +165,16 @@ impl Dump for GlobalVariable {
 #[derive(Debug, Clone)]
 pub struct ExportEntry {
     pub field: String,
-    pub kind: ExternalKind,
-    pub index: u32,
+    pub kind: ExportKind,
+}
+
+#[derive(Debug, Clone)]
+pub enum ExportKind {
+    Function(FunctionIndex),
+    Table(TableIndex),
+    Memory(MemoryIndex),
+    Global(GlobalIndex),
+
 }
 
 impl Dump for ExportEntry {
@@ -179,8 +187,32 @@ impl Dump for ExportEntry {
 
         size += self.kind.dump(buf);
 
-        size += write_varuint32(buf, self.index);
+        size
+    }
+}
 
+impl Dump for ExportKind {
+    fn dump(&self, buf: &mut Vec<u8>) -> usize {
+        use self::ExportKind::*;
+        let mut size = 0;
+        match self {
+            &Function(ref i) => {
+                size += write_uint8(buf, 0);
+                size += write_varuint32(buf, **i);
+            }
+            &Table(ref i) => {
+                size += write_uint8(buf, 1);
+                size += write_varuint32(buf, **i);
+            },
+            &Memory(ref i) => {
+                size += write_uint8(buf, 2);
+                size += write_varuint32(buf, **i);
+            },
+            &Global(ref i) => {
+                size += write_uint8(buf, 3);
+                size += write_varuint32(buf, **i);
+            }
+        }
         size
     }
 }
@@ -198,7 +230,7 @@ impl Dump for ElemSegment {
 
         let elems = &self.elems;
 
-        size += write_varuint32(buf, self.index);
+        size += write_varuint32(buf, *self.index);
         size += self.offest.dump(buf);
 
         size += write_varuint32(buf, elems.len() as u32);
@@ -278,7 +310,7 @@ impl Dump for DataSegment {
 
         let data = &self.data;
 
-        size += write_varuint32(buf, self.index);
+        size += write_varuint32(buf, *self.index);
         size += self.offset.dump(buf);
 
         size += write_varuint32(buf, data.len() as u32);

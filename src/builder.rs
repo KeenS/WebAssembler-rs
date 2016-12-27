@@ -1,20 +1,21 @@
 use module::*;
 use types::*;
+use types::internal::*;
 
 pub struct ModuleBuilder(Module);
 
 macro_rules! gen_add {
-    ($name: tt ($param: tt, $ty: ty) -> $ret: ty, $field: tt) => {
+    ($name: tt ($param: tt, $ty: ty) -> $ret: tt, $field: tt) => {
         pub fn $name(&mut self, ty: $ty) -> $ret {
 
             match &mut (self.0).$field {
                 &mut Some(ref mut v) => {
                     v.push(ty);
-                    (v.len() - 1) as u32
+                    $ret::new((v.len() - 1) as u32)
                 },
                 none => {
                     *none = Some(vec![ty]);
-                    0
+                    $ret::new(0)
                 },
             }
         }
@@ -67,4 +68,57 @@ impl ModuleBuilder {
              codes);
     gen_add!(add_data(data, DataSegment) -> DataIndex,
              data);
+}
+
+pub trait Export<T> {
+    fn export<S: Into<String>>(&mut self, name: S, index: T) -> ExportIndex;
+}
+
+impl Export<FunctionIndex> for ModuleBuilder {
+    fn export<S: Into<String>>(&mut self, name: S, index: FunctionIndex) -> ExportIndex {
+        let entry = ExportEntry {
+            field: name.into(),
+            kind: ExportKind::Function(index),
+        };
+        self.add_export(entry)
+    }
+}
+
+// impl Export<TableIndex> for ModuleBuilder {
+//     fn export<S: Into<String>>(&mut self, name: S, index: TableIndex) -> ExportIndex {
+//         let entry = ExportEntry {
+//             field: name.into(),
+//             kind: ExportKind::Function(index),
+//         };
+//         self.add_export(entry)
+//     }
+// }
+
+
+
+#[macro_export]
+macro_rules! ty {
+    (i32) => (ValueType::I32)
+}
+
+
+#[macro_export]
+macro_rules! ty_vec {
+    ($($t: tt, )*) => {
+        vec!($(ty!($t), )*)
+    };
+
+    ($t: tt $(, $ts: tt)*) => {
+        vec!(ty!($t) $(, ty!($ts))*)
+    };
+}
+
+#[macro_export]
+macro_rules! funtype {
+    (($($params: tt)*) -> $ret: tt) => {
+        FuncType {
+            params: ty_vec!($($params)*),
+            ret: Some(ty!($ret))
+        }
+    };
 }

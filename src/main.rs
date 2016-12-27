@@ -1,6 +1,8 @@
+#[macro_use]
 extern crate WebAssembler;
 
 use WebAssembler::*;
+use WebAssembler::builder::*;
 
 use std::io::Write;
 use std::fs::File;
@@ -13,22 +15,15 @@ fn main() {
     Numeric::I32Add.dump(&mut code);
     code.push(0x0b);
 
-    let mut mb = builder::ModuleBuilder::new();
-    let fty = mb.add_type(FuncType {
-                params: vec![ValueType::I32, ValueType::I32],
-                ret: Some(ValueType::I32)
-            });
+    let mut mb = ModuleBuilder::new();
+    let fty = mb.add_type(funtype!((i32, i32) -> i32));
 
-    mb.add_function(Function(fty));
-    let f = mb.add_code(FunctionBody {
+    let f = mb.add_function(Function(fty));
+    mb.add_code(FunctionBody {
             locals: vec![],
             code: code,
         });
-    mb.add_export(ExportEntry {
-        field: "addTwo".to_string(),
-        kind: ExternalKind::Function,
-        index: f,
-    });
+    mb.export("addTwo", f);
 
     let mut buf = Vec::new();
     let module = mb.build();

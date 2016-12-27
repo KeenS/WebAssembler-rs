@@ -5,7 +5,18 @@ use Dump;
 #[derive(Debug, Clone)]
 pub struct Module {
 //    version: usize
-    pub sections: Vec<Section>
+    pub unknown: Option<String>,
+    pub types: Option<Vec<FuncType>>,
+    pub imports: Option<Vec<Import>>,
+    pub functions: Option<Vec<Function>>,
+    pub tables: Option<Vec<TableType>>,
+    pub memories: Option<Vec<MemoryType>>,
+    pub globals: Option<Vec<GlobalVariable>>,
+    pub exports: Option<Vec<ExportEntry>>,
+    pub start: Option<u32>,
+    pub elements: Option<Vec<ElemSegment>>,
+    pub codes: Option<Vec<FunctionBody>>,
+    pub data: Option<Vec<DataSegment>>,
 }
 
 impl Dump for Module {
@@ -18,152 +29,42 @@ impl Dump for Module {
         let version = 0x0d;
         size += write_uint32(buf, version);
 
-        for sec in self.sections.iter() {
-            size += sec.dump(buf);
-        }
 
-        size
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum Section {
-    UNKNOWN(String),
-    TYPE(Vec<FuncType>),
-    IMPORT(Vec<Import>),
-    FUNCTION(Vec<Function>),
-    TABLE(Vec<TableType>),
-    MEMORY(Vec<MemoryType>),
-    GLOBAL(Vec<GlobalVariable>),
-    EXPORT(Vec<ExportEntry>),
-    START(u32),
-    ELEMENT(Vec<ElemSegment>),
-    CODE(Vec<FunctionBody>),
-    DATA(Vec<DataSegment>),
-}
-
-impl Section {
-    fn code(&self) -> u8 {
-        use Section::*;
-        match self {
-            &UNKNOWN(_) => 0,
-            &TYPE(_) => 1,
-            &IMPORT(_) => 2,
-            &FUNCTION(_) => 3,
-            &TABLE(_) => 4,
-            &MEMORY(_) => 5,
-            &GLOBAL(_) => 6,
-            &EXPORT(_) => 7,
-            &START(_) => 8,
-            &ELEMENT(_) => 9,
-            &CODE(_) => 10,
-            &DATA(_) => 11,
-        }
-    }
-}
-
-impl Dump for Section {
-    fn dump(&self, buf: &mut Vec<u8>) -> usize {
-        use Section::*;
-        let mut size: usize = 0;
-
-        size += write_uint8(buf, self.code());
         let mut v = Vec::new();
-        let sec;
-        let section_size;
-        {
-            let buf = &mut v;
-            section_size = match self {
-                &UNKNOWN(_) => 0,
-                &TYPE(ref types) => {
-                    let mut size = 0;
-                    size += write_varuint32(buf, types.len() as u32);
-                    for t in types {
-                        size += t.dump(buf);
+        macro_rules! do_section {
+            ($code: expr, $field: expr) => {{
+                let field = &$field;
+                for xs in field {
+                    v.clear();
+                    let mut section_size = 0;
+                    let sec = &mut v;
+                    section_size += write_varuint32(sec, xs.len() as u32);
+                    for x in xs {
+                        section_size += x.dump(sec);
                     }
-                    size
-                },
-                &IMPORT(ref imports) => {
-                    let mut size = 0;
-                    size += write_varuint32(buf, imports.len() as u32);
-                    for i in imports {
-                        size += i.dump(buf);
-                    }
-                    size
-                },
-                &FUNCTION(ref functions) => {
-                    let mut size = 0;
-                    size += write_varuint32(buf, functions.len() as u32);
-                    for f in functions {
-                        size += f.dump(buf);
-                    }
-                    size
-                },
-                &TABLE(ref tbls) => {
-                    let mut size = 0;
-                    size += write_varuint32(buf, tbls.len() as u32);
-                    for t in tbls {
-                        size += t.dump(buf);
-                    }
-                    size
-                },
-                &MEMORY(ref mems) => {
-                    let mut size = 0;
-                    size += write_varuint32(buf, mems.len() as u32);
-                    for m in mems {
-                        size += m.dump(buf);
-                    }
-                    size
-                },
-                &GLOBAL(ref glbs) => {
-                    let mut size = 0;
-                    size += write_varuint32(buf, glbs.len() as u32);
-                    for g in glbs {
-                        size += g.dump(buf);
-                    }
-                    size
-                },
-                &EXPORT(ref exps) => {
-                    let mut size = 0;
-                    size += write_varuint32(buf, exps.len() as u32);
-                    for e in exps {
-                        size += e.dump(buf);
-                    }
-                    size
-                },
-                &START(ref index) => {
-                    write_varuint32(buf, *index)
-                },
-                &ELEMENT(ref elms) => {
-                    let mut size = 0;
-                    size += write_varuint32(buf, elms.len() as u32);
-                    for e in elms {
-                        size += e.dump(buf);
-                    }
-                    size
-                },
-                &CODE(ref bodies) => {
-                    let mut size = 0;
-                    size += write_varuint32(buf, bodies.len() as u32);
-                    for b in bodies {
-                        size += b.dump(buf);
-                    }
-                    size
-                },
-                &DATA(ref data_segs) => {
-                    let mut size = 0;
-                    size += write_varuint32(buf, data_segs.len() as u32);
-                    for s in data_segs {
-                        size += s.dump(buf);
-                    }
-                    size
 
-                },
-            };
-            sec = buf;
-        };
-        size += write_varuint32(buf, section_size as u32);
-        size += write_slice(buf, &sec);
+                    size += write_uint8(buf, $code);
+                    size += write_varuint32(buf, section_size as u32);
+                    size += write_slice(buf, &sec);
+                }
+            }};
+        }
+
+
+        do_section!(0x01, self.types);
+        do_section!(0x02, self.imports);
+        do_section!(0x03, self.functions);
+        do_section!(0x04, self.tables);
+        do_section!(0x05, self.memories);
+        do_section!(0x06, self.globals);
+        do_section!(0x07, self.exports);
+        self.start.map(|index| {
+            size += write_uint8(buf, 0x08);
+            size += write_varuint32(buf, index)
+        }).unwrap_or(());
+        do_section!(0x09, self.elements);
+        do_section!(0x0a, self.codes);
+        do_section!(0x0b, self.data);
         size
     }
 }

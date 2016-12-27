@@ -2,6 +2,7 @@ mod util;
 mod module;
 mod types;
 mod ops;
+pub mod builder;
 
 pub use types::*;
 pub use module::*;

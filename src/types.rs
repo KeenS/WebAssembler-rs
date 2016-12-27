@@ -173,3 +173,15 @@ impl Dump for InitExpr {
         size
     }
 }
+
+pub type TypeIndex = u32;
+pub type ImportIndex = u32;
+pub type FunctionIndex = u32;
+pub type TableIndex = u32;
+pub type MemoryIndex = u32;
+pub type GlobalIndex = u32;
+pub type ExportIndex = u32;
+pub type ElementIndex = u32;
+pub type CodeIndex = u32;
+pub type DataIndex = u32;
+

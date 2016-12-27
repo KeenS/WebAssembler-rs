@@ -13,38 +13,25 @@ fn main() {
     Numeric::I32Add.dump(&mut code);
     code.push(0x0b);
 
-    let module = Module {
-        types: Some(vec![
-            FuncType {
+    let mut mb = builder::ModuleBuilder::new();
+    let fty = mb.add_type(FuncType {
                 params: vec![ValueType::I32, ValueType::I32],
                 ret: Some(ValueType::I32)
-            }
-        ]),
-        functions: Some(vec![Function(0)]),
-        exports: Some(vec![
-            ExportEntry {
-                field: "addTwo".to_string(),
-                kind: ExternalKind::Function,
-                index: 0,
-            }
-        ]),
-        codes: Some(vec![
-            FunctionBody {
-                locals: vec![],
-                code: code,
-            }
-        ]),
-        unknown: None,
-        imports: None,
-        tables: None,
-        memories: None,
-        globals: None,
-        start: None,
-        elements: None,
-        data: None,
-    };
+            });
+
+    mb.add_function(Function(fty));
+    let f = mb.add_code(FunctionBody {
+            locals: vec![],
+            code: code,
+        });
+    mb.add_export(ExportEntry {
+        field: "addTwo".to_string(),
+        kind: ExternalKind::Function,
+        index: f,
+    });
 
     let mut buf = Vec::new();
+    let module = mb.build();
     module.dump(&mut buf);
 
     let mut out = File::create(std::env::args().nth(1).unwrap()).unwrap();

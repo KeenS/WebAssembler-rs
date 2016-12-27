@@ -13,7 +13,7 @@ pub struct Module {
     pub memories: Option<Vec<MemoryType>>,
     pub globals: Option<Vec<GlobalVariable>>,
     pub exports: Option<Vec<ExportEntry>>,
-    pub start: Option<u32>,
+    pub start: Option<FunctionIndex>,
     pub elements: Option<Vec<ElemSegment>>,
     pub codes: Option<Vec<FunctionBody>>,
     pub data: Option<Vec<DataSegment>>,
@@ -78,7 +78,7 @@ pub struct Import {
 
 #[derive(Debug, Clone)]
 pub enum ImportKind {
-    Function(u32),
+    Function(TypeIndex),
     Table(TableType),
     Memory(MemoryType),
     GlobalType(GlobalType),
@@ -137,7 +137,7 @@ impl Dump for ImportKind {
 
 
 #[derive(Debug, Clone)]
-pub struct Function(pub u32);
+pub struct Function(pub TypeIndex);
 
 impl Dump for Function {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
@@ -187,7 +187,7 @@ impl Dump for ExportEntry {
 
 #[derive(Debug, Clone)]
 pub struct ElemSegment {
-    pub index: u32,
+    pub index: TableIndex,
     pub offest: InitExpr,
     pub elems: Vec<u32>,
 }
@@ -267,7 +267,7 @@ impl Dump for LocalEntry {
 
 #[derive(Debug, Clone)]
 pub struct DataSegment {
-    index: u32,
+    index: MemoryIndex,
     offset: InitExpr,
     data: Vec<u8>,
 }

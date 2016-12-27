@@ -334,9 +334,6 @@ impl Dump for FunctionBody {
 
             size += write_slice(buf, code);
 
-            // end of function
-            size += write_uint8(buf, 0x0b);
-
             body_size = size;
         }
 

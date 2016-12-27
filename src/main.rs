@@ -11,6 +11,7 @@ fn main() {
     Constant::I32Const(-3256).dump(&mut code);
     VariableAccess::GetLocal(1).dump(&mut code);
     Numeric::I32Add.dump(&mut code);
+    code.push(0x0b);
 
     let module = Module {
         sections: vec![

@@ -8,21 +8,16 @@ use std::io::Write;
 use std::fs::File;
 
 fn main() {
-    let mut code = Vec::new();
+    let (args, fb) = FunctionBodyBuilder::new(funtype!((i32, i32) -> i32));
+    let (ty, fbody) = fb.code(|cb|
+            cb.constant(-3256)
+            .get_local(args[0])
+            .i32_add()
+    ).build();
 
-    Constant::I32Const(-3256).dump(&mut code);
-    VariableAccess::GetLocal(1).dump(&mut code);
-    Numeric::I32Add.dump(&mut code);
-    code.push(0x0b);
 
     let mut mb = ModuleBuilder::new();
-    let fty = mb.add_type(funtype!((i32, i32) -> i32));
-
-    let f = mb.add_function(Function(fty));
-    mb.add_code(FunctionBody {
-            locals: vec![],
-            code: code,
-        });
+    let f = mb.new_function(ty , fbody);
     mb.export("addTwo", f);
 
     let mut buf = Vec::new();

@@ -7,7 +7,7 @@ pub struct Module {
 //    version: usize
     pub unknown: Option<String>,
     pub types: Option<Vec<FuncType>>,
-    pub imports: Option<Vec<Import>>,
+    pub imports: Option<Vec<ImportEntry>>,
     pub functions: Option<Vec<Function>>,
     pub tables: Option<Vec<TableType>>,
     pub memories: Option<Vec<MemoryType>>,
@@ -70,7 +70,7 @@ impl Dump for Module {
 }
 
 #[derive(Debug, Clone)]
-pub struct Import {
+pub struct ImportEntry {
     pub module: String,
     pub field: String,
     pub kind: ImportKind,
@@ -81,10 +81,10 @@ pub enum ImportKind {
     Function(TypeIndex),
     Table(TableType),
     Memory(MemoryType),
-    GlobalType(GlobalType),
+    Global(GlobalType),
 }
 
-impl Dump for Import {
+impl Dump for ImportEntry {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
         let mut size = 0;
         let module = &self.module;
@@ -124,7 +124,7 @@ impl Dump for ImportKind {
                 size
 
             },
-            &GlobalType(ref glb) => {
+            &Global(ref glb) => {
                 size += write_uint8(buf, 3);
                 size += glb.dump(buf);
                 size
@@ -221,6 +221,7 @@ impl Dump for ExportKind {
 pub struct ElemSegment {
     pub index: TableIndex,
     pub offest: InitExpr,
+    // TODO: use function indices
     pub elems: Vec<u32>,
 }
 
@@ -245,7 +246,7 @@ impl Dump for ElemSegment {
 #[derive(Debug, Clone)]
 pub struct FunctionBody {
     pub locals: Vec<LocalEntry>,
-    pub code: Vec<u8>,
+    pub code: Code,
 }
 
 impl Dump for FunctionBody {
@@ -281,8 +282,8 @@ impl Dump for FunctionBody {
 
 #[derive(Debug, Clone)]
 pub struct LocalEntry {
-    count: u32,
-    ty: ValueType,
+    pub count: u32,
+    pub ty: ValueType,
 }
 
 
@@ -299,9 +300,9 @@ impl Dump for LocalEntry {
 
 #[derive(Debug, Clone)]
 pub struct DataSegment {
-    index: MemoryIndex,
-    offset: InitExpr,
-    data: Vec<u8>,
+    pub index: MemoryIndex,
+    pub offset: InitExpr,
+    pub data: Vec<u8>,
 }
 
 impl Dump for DataSegment {

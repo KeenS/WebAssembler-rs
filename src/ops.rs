@@ -1,3 +1,4 @@
+use types::*;
 use util::*;
 use Dump;
 
@@ -5,11 +6,12 @@ use Dump;
 pub enum Control {
     Unreachable,
     Nop,
-    Block,
-    Loop,
+    Block{sig: BlockType},
+    Loop{sig: BlockType},
     If,
     Else,
     End,
+    // TODO: use relative block index
     Br{ depth: u32 },
     BrIf{ depth: u32},
     BrTable(BrTarget),
@@ -22,8 +24,18 @@ impl Dump for Control {
         match self {
             &Unreachable => write_uint8(buf, 0x00),
             &Nop => write_uint8(buf, 0x01),
-            &Block => write_uint8(buf, 0x02),
-            &Loop => write_uint8(buf, 0x03),
+            &Block{ref sig} => {
+                let mut size = 0;
+                size += sig.dump(buf);
+                size += write_uint8(buf, 0x02);
+                size
+            },
+            &Loop{ref sig} => {
+                let mut size = 0;
+                size += sig.dump(buf);
+                size += write_uint8(buf, 0x03);
+                size
+            },
             &If => write_uint8(buf, 0x04),
             &Else => write_uint8(buf, 0x05),
             &End => write_uint8(buf, 0x06),
@@ -53,8 +65,9 @@ impl Dump for Control {
 
 #[derive(Debug, Clone)]
 pub struct BrTarget {
-    table: Vec<u32>,
-    default_targt: u32,
+    // TODO: use relative block index
+    pub table: Vec<u32>,
+    pub default_target: u32,
 }
 
 impl Dump for BrTarget {
@@ -67,7 +80,7 @@ impl Dump for BrTarget {
             size += write_varuint32(buf, *t);
         }
 
-        size += write_varuint32(buf, self.default_targt);
+        size += write_varuint32(buf, self.default_target);
 
         size
     }
@@ -76,6 +89,7 @@ impl Dump for BrTarget {
 
 #[derive(Debug, Clone)]
 pub enum Call {
+    /// TODO: use function index
     Call{index: u32},
     CallIndirect{index: u32, reserved: bool},
 }
@@ -122,11 +136,11 @@ impl Dump for Parametric {
 
 #[derive(Debug, Clone)]
 pub enum VariableAccess {
-    GetLocal(u32),
-    SetLocal(u32),
-    TeeLocal(u32),
-    GetGlobal(u32),
-    SetGlobal(u32),
+    GetLocal(LocalIndex),
+    SetLocal(LocalIndex),
+    TeeLocal(LocalIndex),
+    GetGlobal(GlobalIndex),
+    SetGlobal(GlobalIndex),
 }
 
 
@@ -137,23 +151,23 @@ impl Dump for VariableAccess {
         match self {
             &GetLocal(ref i) => {
                 size += write_uint8(buf, 0x20);
-                size += write_varuint32(buf, *i);
+                size += write_varuint32(buf, **i);
             },
             &SetLocal(ref i) => {
                 size += write_uint8(buf, 0x21);
-                size += write_varuint32(buf, *i);
+                size += write_varuint32(buf, **i);
             },
             &TeeLocal(ref i) => {
                 size += write_uint8(buf, 0x22);
-                size += write_varuint32(buf, *i);
+                size += write_varuint32(buf, **i);
             },
             &GetGlobal(ref i) => {
                 size += write_uint8(buf, 0x023);
-                size += write_varuint32(buf, *i);
+                size += write_varuint32(buf, **i);
             },
             &SetGlobal(ref i) => {
                 size += write_uint8(buf, 0x24);
-                size += write_varuint32(buf, *i);
+                size += write_varuint32(buf, **i);
             },
         };
         size
@@ -193,191 +207,39 @@ pub enum MemoryRelated {
 impl Dump for MemoryRelated{
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
         use self::MemoryRelated::*;
+        fn do_imm(buf: &mut Vec<u8>, imm: &MemoryImmediate, code: u8) -> usize {
+            let mut size = 0;
+
+            size += write_uint8(buf, code);
+            size += imm.dump(buf);
+
+            size
+
+        };
         match self {
-            &I32Load{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x28);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I64Load{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x29);
-                size += imm.dump(buf);
-
-                size
-            },
-            &F32Load{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x2a);
-                size += imm.dump(buf);
-
-                size
-            },
-            &F64Load{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x2b);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I32Load8S{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x2c);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I32Load8U{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x2d);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I32Load16S{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x2e);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I32Load16U{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x2f);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I64Load8S{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x30);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I64Load8U{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x31);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I64Load16S{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x32);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I64Load16U{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x33);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I64load32S{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x34);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I64load32U{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x35);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I32Store{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x36);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I64Store{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x37);
-                size += imm.dump(buf);
-
-                size
-            },
-            &F32Store{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x38);
-                size += imm.dump(buf);
-
-                size
-            },
-            &F64Store{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x39);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I32Store8{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x3a);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I32Store16{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x3b);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I64Store8{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x3c);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I64Store16{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x3d);
-                size += imm.dump(buf);
-
-                size
-            },
-            &I64Store32{ref imm} => {
-                let mut size = 0;
-
-                size += write_uint8(buf, 0x3e);
-                size += imm.dump(buf);
-
-                size
-            },
+            &I32Load{ref imm}    => do_imm(buf, imm, 0x28),
+            &I64Load{ref imm}    => do_imm(buf, imm, 0x29),
+            &F32Load{ref imm}    => do_imm(buf, imm, 0x2a),
+            &F64Load{ref imm}    => do_imm(buf, imm, 0x2b),
+            &I32Load8S{ref imm}  => do_imm(buf, imm, 0x2c),
+            &I32Load8U{ref imm}  => do_imm(buf, imm, 0x2d),
+            &I32Load16S{ref imm} => do_imm(buf, imm, 0x2e),
+            &I32Load16U{ref imm} => do_imm(buf, imm, 0x2f),
+            &I64Load8S{ref imm}  => do_imm(buf, imm, 0x30),
+            &I64Load8U{ref imm}  => do_imm(buf, imm, 0x31),
+            &I64Load16S{ref imm} => do_imm(buf, imm, 0x32),
+            &I64Load16U{ref imm} => do_imm(buf, imm, 0x33),
+            &I64load32S{ref imm} => do_imm(buf, imm, 0x34),
+            &I64load32U{ref imm} => do_imm(buf, imm, 0x35),
+            &I32Store{ref imm}   => do_imm(buf, imm, 0x36),
+            &I64Store{ref imm}   => do_imm(buf, imm, 0x37),
+            &F32Store{ref imm}   => do_imm(buf, imm, 0x38),
+            &F64Store{ref imm}   => do_imm(buf, imm, 0x39),
+            &I32Store8{ref imm}  => do_imm(buf, imm, 0x3a),
+            &I32Store16{ref imm} => do_imm(buf, imm, 0x3b),
+            &I64Store8{ref imm}  => do_imm(buf, imm, 0x3c),
+            &I64Store16{ref imm} => do_imm(buf, imm, 0x3d),
+            &I64Store32{ref imm} => do_imm(buf, imm, 0x3e),
             &CurrentMemory{ref reserved} => {
                 let mut size = 0;
 
@@ -400,8 +262,8 @@ impl Dump for MemoryRelated{
 
 #[derive(Debug, Clone)]
 pub struct MemoryImmediate {
-    flags: u32,
-    offset: u32,
+    pub flags: u32,
+    pub offset: u32,
 }
 
 
@@ -424,6 +286,11 @@ pub enum Constant {
     F32Const(f32),
     F64Const(f64),
 }
+
+impl From<i32> for Constant {fn from(i: i32) -> Self {Constant::I32Const(i)}}
+impl From<i64> for Constant {fn from(i: i64) -> Self {Constant::I64Const(i)}}
+impl From<f32> for Constant {fn from(f: f32) -> Self {Constant::F32Const(f)}}
+impl From<f64> for Constant {fn from(f: f64) -> Self {Constant::F64Const(f)}}
 
 impl Dump for Constant {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {

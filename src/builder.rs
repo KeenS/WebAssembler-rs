@@ -87,6 +87,14 @@ impl ModuleBuilder {
     gen_add!(add_data(data, DataSegment) -> DataIndex,
              data);
 
+    pub fn new_function(&mut self, (t, body): (FuncType, FunctionBody)) -> FunctionIndex {
+        let tidx = self.add_type(t);
+        let fidx = self.add_function(Function(tidx));
+        let cidx = self.add_code(body);
+        assert_eq!(*cidx, *fidx);
+        fidx
+    }
+
     pub fn new_data(&mut self, idx: MemoryIndex, offset: Code, data: Vec<u8>) -> DataIndex {
         let seg = DataSegment {
             index: idx,
@@ -169,7 +177,6 @@ macro_rules! gen_export {
         }
         }
     }
-
 }
 
 gen_export!(FunctionIndex, Function);
@@ -195,7 +202,6 @@ macro_rules! gen_import {
         }
         }
     }
-
 }
 
 gen_import!(TypeIndex, Function);
@@ -219,11 +225,7 @@ impl NewFunction<TypeIndex> for ModuleBuilder {
 
 impl NewFunction<FuncType> for ModuleBuilder {
     fn new_function(&mut self, t: FuncType, body: FunctionBody) -> FunctionIndex {
-        let tidx = self.add_type(t);
-        let fidx = self.add_function(Function(tidx));
-        let cidx = self.add_code(body);
-        assert_eq!(*cidx, *fidx);
-        fidx
+        self.new_function((t, body))
     }
 }
 
@@ -494,22 +496,24 @@ impl CodeBuilder {
     gen_builder!(F64ReinterpretI64, f64_reinterpret_i64);
 }
 
-pub struct FunctionBodyBuilder {
+pub struct FunctionBuilder {
     ty: FuncType,
+    args: Vec<LocalIndex>,
     locals: Vec<ValueType>,
     cb: CodeBuilder,
 }
 
 
-impl FunctionBodyBuilder {
-    pub fn new(ty: FuncType) -> (Vec<LocalIndex>, Self) {
-        let locals = (0..ty.params.len()).map(|i| LocalIndex::new(i as u32)).collect();
-        let fb = FunctionBodyBuilder {
+impl FunctionBuilder {
+    pub fn new(ty: FuncType) -> Self {
+        let args = (0..ty.params.len()).map(|i| LocalIndex::new(i as u32)).collect();
+        let fb = FunctionBuilder {
             ty: ty,
+            args: args,
             locals: Vec::new(),
             cb: CodeBuilder::new(),
         };
-        (locals, fb)
+        fb
     }
 
     pub fn build(self) -> (FuncType, FunctionBody) {
@@ -527,8 +531,8 @@ impl FunctionBodyBuilder {
         LocalIndex::new((self.ty.params.len() + self.locals.len() - 1) as u32)
     }
 
-    pub fn code<F: Fn(CodeBuilder) -> CodeBuilder>(mut self, f: F) -> Self {
-        self.cb =  f(self.cb);
+    pub fn code<F: Fn(CodeBuilder, &[LocalIndex]) -> CodeBuilder>(mut self, f: F) -> Self {
+        self.cb =  f(self.cb, &self.args);
         self
     }
 }

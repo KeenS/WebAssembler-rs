@@ -1,8 +1,8 @@
 #[macro_use]
-extern crate WebAssembler;
+extern crate web_assembler as wasm;
 
-use WebAssembler::*;
-use WebAssembler::builder::*;
+use wasm::*;
+use wasm::builder::*;
 
 use std::io::Write;
 use std::fs::File;

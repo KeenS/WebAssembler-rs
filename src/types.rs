@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
-
 use util::*;
+use ops::Op;
 use ::Dump;
 
 #[derive(Debug, Clone)]
@@ -16,11 +16,11 @@ pub enum ValueType {
 pub struct BlockType(pub Option<ValueType>);
 #[derive(Debug, Clone)]
 pub enum ElemType {
-    AnyFunc
+    AnyFunc,
 }
 
 #[derive(Debug, Clone)]
-pub struct FuncType{
+pub struct FuncType {
     pub params: Vec<ValueType>,
     pub ret: Option<ValueType>,
 }
@@ -51,7 +51,7 @@ pub struct ResizableLimits {
 }
 
 #[derive(Debug, Clone)]
-pub struct Code(pub Vec<u8>);
+pub struct Code(pub Vec<Op>);
 
 #[derive(Debug, Clone)]
 pub struct InitExpr(pub Code);
@@ -61,27 +61,19 @@ impl Dump for ValueType {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
         use self::ValueType::*;
         match self {
-            &I32 => {
-                write_varint7(buf, -0x01)
-            },
-            &I64 => {
-                write_varint7(buf, -0x02)
-            },
-            &F32 => {
-                write_varint7(buf, -0x03)
-            },
-            &F64 => {
-                write_varint7(buf, -0x04)
-            },
+            &I32 => write_varint7(buf, -0x01),
+            &I64 => write_varint7(buf, -0x02),
+            &F32 => write_varint7(buf, -0x03),
+            &F64 => write_varint7(buf, -0x04),
         }
-   }
+    }
 }
 
 impl Dump for BlockType {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
         match &self.0 {
             &Some(ref v) => v.dump(buf),
-            &None => write_varint7(buf, -0x40)
+            &None => write_varint7(buf, -0x40),
         }
     }
 }
@@ -90,11 +82,9 @@ impl Dump for ElemType {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
         use self::ElemType::*;
         match self {
-            &AnyFunc => {
-                write_varint7(buf, -0x10)
-            },
+            &AnyFunc => write_varint7(buf, -0x10),
         }
-   }
+    }
 }
 impl Dump for FuncType {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
@@ -132,7 +122,7 @@ impl Dump for TableType {
         size += self.element.dump(buf);
         size += self.limits.dump(buf);
         size
-   }
+    }
 }
 
 impl Dump for MemoryType {
@@ -176,60 +166,112 @@ impl Dump for ResizableLimits {
     }
 }
 
-
-impl Deref for Code {
-    type Target = Vec<u8>;
-    fn deref(&self) -> & Self::Target {
-        &self.0
+impl Dump for Code {
+    fn dump(&self, buf: &mut Vec<u8>) -> usize {
+        let mut size = 0;
+        for op in self.0.iter() {
+            size += op.dump(buf);
+        }
+        size
     }
 }
 
-impl DerefMut for Code {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
 
 impl Dump for InitExpr {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
-        write_slice(buf, self.0.as_ref())
+        self.0.dump(buf)
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TypeIndex(u32);
-impl Deref for TypeIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+impl Deref for TypeIndex {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        &self.0
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ImportIndex(u32);
-impl Deref for ImportIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+impl Deref for ImportIndex {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        &self.0
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FunctionIndex(u32);
-impl Deref for FunctionIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+impl Deref for FunctionIndex {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        &self.0
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TableIndex(u32);
-impl Deref for TableIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+impl Deref for TableIndex {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        &self.0
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MemoryIndex(u32);
-impl Deref for MemoryIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+impl Deref for MemoryIndex {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        &self.0
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct GlobalIndex(u32);
-impl Deref for GlobalIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+impl Deref for GlobalIndex {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        &self.0
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ExportIndex(u32);
-impl Deref for ExportIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+impl Deref for ExportIndex {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        &self.0
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ElementIndex(u32);
-impl Deref for ElementIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+impl Deref for ElementIndex {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        &self.0
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CodeIndex(u32);
-impl Deref for CodeIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+impl Deref for CodeIndex {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        &self.0
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DataIndex(u32);
-impl Deref for DataIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+impl Deref for DataIndex {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        &self.0
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct LocalIndex(u32);
-impl Deref for LocalIndex { type Target = u32; fn deref(&self) -> &u32 {&self.0}}
+impl Deref for LocalIndex {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        &self.0
+    }
+}
 
 
 pub mod internal {

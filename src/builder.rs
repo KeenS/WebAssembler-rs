@@ -3,6 +3,7 @@ use std::ops::{Range, RangeFrom};
 use module::*;
 use types::*;
 use ops;
+use ops::Op;
 use Dump;
 pub struct ModuleBuilder(Module);
 
@@ -232,21 +233,21 @@ impl NewFunction<FuncType> for ModuleBuilder {
 
 
 pub struct CodeBuilder{
-    code: Vec<u8>,
+    code: Vec<Op>,
 }
 
 macro_rules! gen_builder {
     ($variant: path, $fname: ident) => {
         pub fn $fname(mut self) -> Self {
-            ($variant).dump(&mut self.code);
+            self.code.push($variant);
             self
         }
     };
     ($variant: tt {$($arg: ident : $argty: ty, )* }, $fname: ident) => {
         pub fn $fname(mut self, $($arg: $argty, )*) -> Self {
-            ($variant {
+            self.code.push($variant {
                 $($arg : $arg, )*
-            }).dump(&mut self.code);
+            });
             self
         }
     };
@@ -257,7 +258,7 @@ macro_rules! gen_builder {
 
     ($variant: tt [$($arg: ident : $argty: ty, )*], $fname: ident) => {
         pub fn $fname(mut self, $($arg: $argty, )*) -> Self {
-            $variant($($arg, )*).dump(&mut self.code);
+            self.code.push($variant($($arg, )*));
             self
         }
     };
@@ -274,22 +275,13 @@ macro_rules! gen_memory_builder {
                 flags: $align,
                 offset: offset
             };
-            ($variant{imm: imm}).dump(&mut self.code);
+            self.code.push($variant{imm: imm});
             self
         }
     };
 
 }
-use ops::Control::*;
-use ops::Call::*;
-use ops::Parametric::*;
-use ops::VariableAccess::*;
-use ops::MemoryRelated::*;
-use ops::Constant;
-use ops::Comparison::*;
-use ops::Numeric::*;
-use ops::Conversion::*;
-use ops::ReInterpret::*;
+use Op::*;
 
 impl CodeBuilder {
     pub fn new() -> Self {
@@ -299,7 +291,6 @@ impl CodeBuilder {
     }
 
     pub fn build(mut self) -> Code {
-        self.code.push(0x0b);
         Code(self.code)
     }
 
@@ -313,10 +304,10 @@ impl CodeBuilder {
     gen_builder!(Br{depth: u32}, br);
     gen_builder!(BrIf{depth: u32}, br_if);
     pub fn br_table(mut self, table: Vec<u32>, default: u32) -> Self {
-        BrTable(ops::BrTarget{
+        self.code.push(BrTable(ops::BrTarget{
             table: table,
             default_target: default,
-        }).dump(&mut self.code);
+        }));
         self
     }
     gen_builder!(Return, return_);
@@ -362,9 +353,9 @@ impl CodeBuilder {
 
 
     pub fn constant<C>(mut self, c: C) -> Self
-        where Constant: From<C>
+        where Op: From<C>
     {
-        Constant::from(c).dump(&mut self.code);
+        self.code.push(Op::from(c));
         self
     }
 

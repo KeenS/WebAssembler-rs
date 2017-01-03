@@ -4,7 +4,7 @@ use Dump;
 
 #[derive(Debug, Clone)]
 pub struct Module {
-//    version: usize
+    //    version: usize
     pub unknown: Option<String>,
     pub types: Option<Vec<FuncType>>,
     pub imports: Option<Vec<ImportEntry>>,
@@ -58,10 +58,13 @@ impl Dump for Module {
         do_section!(0x05, self.memories);
         do_section!(0x06, self.globals);
         do_section!(0x07, self.exports);
-        self.start.as_ref().map(|index| {
-            size += write_uint8(buf, 0x08);
-            size += write_varuint32(buf, **index)
-        }).unwrap_or(());
+        self.start
+            .as_ref()
+            .map(|index| {
+                size += write_uint8(buf, 0x08);
+                size += write_varuint32(buf, **index)
+            })
+            .unwrap_or(());
         do_section!(0x09, self.elements);
         do_section!(0x0a, self.codes);
         do_section!(0x0b, self.data);
@@ -112,24 +115,24 @@ impl Dump for ImportKind {
                 size += write_uint8(buf, 0);
                 size += write_varuint32(buf, **id);
                 size
-            },
+            }
             &Table(ref tbl) => {
                 size += write_uint8(buf, 1);
                 size += tbl.dump(buf);
                 size
-            },
+            }
             &Memory(ref m) => {
                 size += write_uint8(buf, 2);
                 size += m.dump(buf);
                 size
 
-            },
+            }
             &Global(ref glb) => {
                 size += write_uint8(buf, 3);
                 size += glb.dump(buf);
                 size
 
-            },
+            }
 
         }
     }
@@ -174,7 +177,6 @@ pub enum ExportKind {
     Table(TableIndex),
     Memory(MemoryIndex),
     Global(GlobalIndex),
-
 }
 
 impl Dump for ExportEntry {
@@ -203,11 +205,11 @@ impl Dump for ExportKind {
             &Table(ref i) => {
                 size += write_uint8(buf, 1);
                 size += write_varuint32(buf, **i);
-            },
+            }
             &Memory(ref i) => {
                 size += write_uint8(buf, 2);
                 size += write_varuint32(buf, **i);
-            },
+            }
             &Global(ref i) => {
                 size += write_uint8(buf, 3);
                 size += write_varuint32(buf, **i);
@@ -266,7 +268,8 @@ impl Dump for FunctionBody {
                 size += l.dump(buf);
             }
 
-            size += write_slice(buf, code);
+            size += code.dump(buf);
+            size += write_uint8(buf, 0x0b);
 
             body_size = size;
         }
@@ -320,4 +323,3 @@ impl Dump for DataSegment {
         size
     }
 }
-

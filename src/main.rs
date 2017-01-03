@@ -9,13 +9,13 @@ use std::fs::File;
 
 fn main() {
     let mut mb = ModuleBuilder::new();
-    let f = mb.new_function(
-        FunctionBuilder::new(funtype!((i32, i32) -> i32))
-            .code(|cb, args|
-                  cb.constant(-3256)
-                  .get_local(args[0])
-                  .i32_add()
-            ).build());
+    let f = mb.new_function(FunctionBuilder::new(funtype!((i32, i32) -> i32))
+        .code(|cb, args| {
+            cb.constant(-3256)
+                .get_local(args[0])
+                .i32_add()
+        })
+        .build());
     mb.export("addTwo", f);
     let module = mb.build();
 

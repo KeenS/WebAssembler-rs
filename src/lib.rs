@@ -11,5 +11,3 @@ pub use ops::*;
 pub trait Dump {
     fn dump(&self, buf: &mut Vec<u8>) -> usize;
 }
-
-

@@ -100,7 +100,7 @@ impl ModuleBuilder {
         let seg = DataSegment {
             index: idx,
             offset: InitExpr(offset),
-            data: data
+            data: data,
         };
         self.add_data(seg)
     }
@@ -121,8 +121,7 @@ impl NewTable<Range<u32>> for ModuleBuilder {
     fn new_table(&mut self, element: ElemType, range: Range<u32>) -> TableIndex {
         let table = TableType {
             element: element,
-            limits: ResizableLimits::new(range.start)
-                .max(range.end)
+            limits: ResizableLimits::new(range.start).max(range.end),
         };
         self.add_table(table)
     }
@@ -132,7 +131,7 @@ impl NewTable<RangeFrom<u32>> for ModuleBuilder {
     fn new_table(&mut self, element: ElemType, range: RangeFrom<u32>) -> TableIndex {
         let table = TableType {
             element: element,
-            limits: ResizableLimits::new(range.start)
+            limits: ResizableLimits::new(range.start),
         };
         self.add_table(table)
     }
@@ -144,19 +143,14 @@ pub trait NewMemory<T> {
 
 impl NewMemory<Range<u32>> for ModuleBuilder {
     fn new_memory(&mut self, range: Range<u32>) -> MemoryIndex {
-        let memory = MemoryType {
-            limits: ResizableLimits::new(range.start)
-                .max(range.end)
-        };
+        let memory = MemoryType { limits: ResizableLimits::new(range.start).max(range.end) };
         self.add_memory(memory)
     }
 }
 
 impl NewMemory<RangeFrom<u32>> for ModuleBuilder {
     fn new_memory(&mut self, range: RangeFrom<u32>) -> MemoryIndex {
-        let memory = MemoryType {
-            limits: ResizableLimits::new(range.start)
-        };
+        let memory = MemoryType { limits: ResizableLimits::new(range.start) };
         self.add_memory(memory)
     }
 }
@@ -187,13 +181,18 @@ gen_export!(GlobalIndex, Global);
 
 
 pub trait Import<Ty> {
-    fn import<S: Into<String>, T: Into<String>>(&mut self, module: S, name: T, index: Ty) -> ImportIndex;
+    fn import<S, T>(&mut self, module: S, name: T, index: Ty) -> ImportIndex
+        where S: Into<String>,
+              T: Into<String>;
 }
 
 macro_rules! gen_import {
     ($name: ty, $variant: tt) => {
         impl Import<$name> for ModuleBuilder {
-        fn import<S: Into<String>, T: Into<String>>(&mut self, module: S, name: T, index: $name) -> ImportIndex {
+            fn import<S, T>(&mut self, module: S, name: T, index: $name) -> ImportIndex
+                where S: Into<String>,
+                      T: Into<String>
+            {
             let entry = ImportEntry {
                 module: module.into(),
                 field: name.into(),
@@ -232,7 +231,7 @@ impl NewFunction<FuncType> for ModuleBuilder {
 
 
 
-pub struct CodeBuilder{
+pub struct CodeBuilder {
     code: Vec<Op>,
 }
 
@@ -285,9 +284,7 @@ use Op::*;
 
 impl CodeBuilder {
     pub fn new() -> Self {
-        CodeBuilder{
-            code: Vec::new(),
-        }
+        CodeBuilder { code: Vec::new() }
     }
 
     pub fn build(mut self) -> Code {
@@ -296,15 +293,15 @@ impl CodeBuilder {
 
     gen_builder!(Unreachable, unreachable);
     gen_builder!(Nop, nop);
-    gen_builder!(Block{sig : BlockType}, block);
-    gen_builder!(Loop{sig : BlockType}, loop_);
+    gen_builder!(Block { sig: BlockType }, block);
+    gen_builder!(Loop { sig: BlockType }, loop_);
     gen_builder!(If, if_);
     gen_builder!(Else, else_);
     gen_builder!(End, end);
-    gen_builder!(Br{depth: u32}, br);
-    gen_builder!(BrIf{depth: u32}, br_if);
+    gen_builder!(Br { depth: u32 }, br);
+    gen_builder!(BrIf { depth: u32 }, br_if);
     pub fn br_table(mut self, table: Vec<u32>, default: u32) -> Self {
-        self.code.push(BrTable(ops::BrTarget{
+        self.code.push(BrTable(ops::BrTarget {
             table: table,
             default_target: default,
         }));
@@ -312,8 +309,12 @@ impl CodeBuilder {
     }
     gen_builder!(Return, return_);
 
-    gen_builder!(Call{index: u32}, call);
-    gen_builder!(CallIndirect{index: u32, reserved: bool}, call_indirect);
+    gen_builder!(Call { index: u32 }, call);
+    gen_builder!(CallIndirect {
+                     index: u32,
+                     reserved: bool,
+                 },
+                 call_indirect);
 
     gen_builder!(Drop, drop);
     gen_builder!(Select, select);
@@ -348,8 +349,8 @@ impl CodeBuilder {
     gen_memory_builder!(I64Store8, i64_store8, 3);
     gen_memory_builder!(I64Store16, i64_store16, 4);
     gen_memory_builder!(I64Store32, i64_store32, 5);
-    gen_builder!(CurrentMemory{ reserved: bool }, current_memory);
-    gen_builder!(GrowMemory{ reserved: bool }, grow_memory);
+    gen_builder!(CurrentMemory { reserved: bool }, current_memory);
+    gen_builder!(GrowMemory { reserved: bool }, grow_memory);
 
 
     pub fn constant<C>(mut self, c: C) -> Self
@@ -509,7 +510,7 @@ impl FunctionBuilder {
 
     pub fn build(self) -> (FuncType, FunctionBody) {
         // TODO: compact local entry
-        let locals = self.locals.into_iter().map(|l| LocalEntry{count: 1, ty: l}).collect();
+        let locals = self.locals.into_iter().map(|l| LocalEntry { count: 1, ty: l }).collect();
         let body = FunctionBody {
             locals: locals,
             code: self.cb.build(),
@@ -523,7 +524,7 @@ impl FunctionBuilder {
     }
 
     pub fn code<F: Fn(CodeBuilder, &[LocalIndex]) -> CodeBuilder>(mut self, f: F) -> Self {
-        self.cb =  f(self.cb, &self.args);
+        self.cb = f(self.cb, &self.args);
         self
     }
 }

@@ -44,19 +44,19 @@ macro_rules! gen_add {
 impl ModuleBuilder {
     pub fn new() -> Self {
         ModuleBuilder(Module {
-            unknown: None,
-            types: None,
-            imports: None,
-            functions: None,
-            tables: None,
-            memories: None,
-            globals: None,
-            exports: None,
-            start: None,
-            elements: None,
-            codes: None,
-            data: None,
-        })
+                          unknown: None,
+                          types: None,
+                          imports: None,
+                          functions: None,
+                          tables: None,
+                          memories: None,
+                          globals: None,
+                          exports: None,
+                          start: None,
+                          elements: None,
+                          codes: None,
+                          data: None,
+                      })
     }
 
     pub fn build(self) -> Module {
@@ -107,9 +107,9 @@ impl ModuleBuilder {
 
     pub fn new_global(&mut self, ty: GlobalType, init: Code) -> GlobalIndex {
         self.add_global(GlobalVariable {
-            ty: ty,
-            init: InitExpr(init),
-        })
+                            ty: ty,
+                            init: InitExpr(init),
+                        })
     }
 }
 
@@ -301,10 +301,11 @@ impl CodeBuilder {
     gen_builder!(Br { depth: u32 }, br);
     gen_builder!(BrIf { depth: u32 }, br_if);
     pub fn br_table(mut self, table: Vec<u32>, default: u32) -> Self {
-        self.code.push(BrTable(ops::BrTarget {
-            table: table,
-            default_target: default,
-        }));
+        self.code
+            .push(BrTable(ops::BrTarget {
+                              table: table,
+                              default_target: default,
+                          }));
         self
     }
     gen_builder!(Return, return_);
@@ -498,7 +499,9 @@ pub struct FunctionBuilder {
 
 impl FunctionBuilder {
     pub fn new(ty: FuncType) -> Self {
-        let args = (0..ty.params.len()).map(|i| LocalIndex::new(i as u32)).collect();
+        let args = (0..ty.params.len())
+            .map(|i| LocalIndex::new(i as u32))
+            .collect();
         let fb = FunctionBuilder {
             ty: ty,
             args: args,
@@ -510,7 +513,10 @@ impl FunctionBuilder {
 
     pub fn build(self) -> (FuncType, FunctionBody) {
         // TODO: compact local entry
-        let locals = self.locals.into_iter().map(|l| LocalEntry { count: 1, ty: l }).collect();
+        let locals = self.locals
+            .into_iter()
+            .map(|l| LocalEntry { count: 1, ty: l })
+            .collect();
         let body = FunctionBody {
             locals: locals,
             code: self.cb.build(),
@@ -521,6 +527,15 @@ impl FunctionBuilder {
     pub fn new_local(&mut self, ty: ValueType) -> LocalIndex {
         self.locals.push(ty);
         LocalIndex::new((self.ty.params.len() + self.locals.len() - 1) as u32)
+    }
+
+    pub fn new_locals(&mut self, tys: Vec<ValueType>) -> Vec<LocalIndex> {
+        tys.into_iter()
+            .map(|ty| {
+                     self.locals.push(ty);
+                     LocalIndex::new((self.ty.params.len() + self.locals.len() - 1) as u32)
+                 })
+            .collect()
     }
 
     pub fn code<F: Fn(CodeBuilder, &[LocalIndex]) -> CodeBuilder>(mut self, f: F) -> Self {

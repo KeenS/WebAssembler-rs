@@ -287,7 +287,7 @@ impl CodeBuilder {
         CodeBuilder { code: Vec::new() }
     }
 
-    pub fn build(mut self) -> Code {
+    pub fn build(self) -> Code {
         Code(self.code)
     }
 
@@ -538,7 +538,7 @@ impl FunctionBuilder {
             .collect()
     }
 
-    pub fn code<F: Fn(CodeBuilder, &[LocalIndex]) -> CodeBuilder>(mut self, f: F) -> Self {
+    pub fn code<F: FnOnce(CodeBuilder, &[LocalIndex]) -> CodeBuilder>(mut self, f: F) -> Self {
         self.cb = f(self.cb, &self.args);
         self
     }

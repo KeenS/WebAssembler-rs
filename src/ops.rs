@@ -198,17 +198,18 @@ impl Dump for Op {
             &Unreachable => size += write_uint8(buf, 0x00),
             &Nop => size += write_uint8(buf, 0x01),
             &Block { ref sig } => {
-                size += sig.dump(buf);
                 size += write_uint8(buf, 0x02);
+                size += sig.dump(buf);
             }
             &Loop { ref sig } => {
-                size += sig.dump(buf);
                 size += write_uint8(buf, 0x03);
+                size += sig.dump(buf);
             }
             &If => size += write_uint8(buf, 0x04),
             &Else => size += write_uint8(buf, 0x05),
-            &End => size += write_uint8(buf, 0x06),
+            &End => size += write_uint8(buf, 0x0b),
             &Br { ref depth } => {
+                size += write_uint8(buf, 0x0c);
                 size += write_varuint32(buf, *depth);
             }
             &BrIf { ref depth } => {
@@ -225,7 +226,10 @@ impl Dump for Op {
                 size += write_varuint32(buf, *index);
             }
 
-            &CallIndirect { ref index, ref reserved } => {
+            &CallIndirect {
+                 ref index,
+                 ref reserved,
+             } => {
                 size += write_uint8(buf, 0x11);
                 size += write_varuint32(buf, *index);
                 size += write_varuint1(buf, *reserved as u8);

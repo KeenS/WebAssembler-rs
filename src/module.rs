@@ -26,7 +26,7 @@ impl Dump for Module {
         let magic = b"\0asm";
         size += write_slice(buf, magic);
 
-        let version = 0x0d;
+        let version = 0x01;
         size += write_uint32(buf, version);
 
 
@@ -61,9 +61,9 @@ impl Dump for Module {
         self.start
             .as_ref()
             .map(|index| {
-                size += write_uint8(buf, 0x08);
-                size += write_varuint32(buf, **index)
-            })
+                     size += write_uint8(buf, 0x08);
+                     size += write_varuint32(buf, **index)
+                 })
             .unwrap_or(());
         do_section!(0x09, self.elements);
         do_section!(0x0a, self.codes);

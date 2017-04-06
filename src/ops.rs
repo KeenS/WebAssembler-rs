@@ -16,8 +16,8 @@ pub enum Op {
     BrIf { depth: u32 },
     BrTable(BrTarget),
     Return,
-    /// TODO: use function index
-    Call { index: u32 },
+    Call { index: FunctionSpaceIndex },
+    // TODO: use table index
     CallIndirect { index: u32, reserved: bool },
     Drop,
     Select,
@@ -180,6 +180,23 @@ pub enum Op {
     F64ReinterpretI64,
 }
 
+impl Op {
+    pub fn resolve_functions(&mut self, nimports: u32) {
+        match *self {
+            Op::Call { ref mut index } => {
+                use FunctionSpaceIndex::*;
+                match *index {
+                    Function(ref mut f) => {
+                        f.0 += nimports;
+                    }
+                    _ => (),
+                }
+            }
+            _ => (),
+        }
+    }
+}
+
 impl Dump for Op {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
         use self::Op::*;
@@ -223,7 +240,7 @@ impl Dump for Op {
             &Return => size += write_uint8(buf, 0x0f),
             &Call { ref index } => {
                 size += write_uint8(buf, 0x10);
-                size += write_varuint32(buf, *index);
+                size += write_varuint32(buf, **index);
             }
 
             &CallIndirect {

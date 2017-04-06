@@ -59,7 +59,23 @@ impl ModuleBuilder {
                       })
     }
 
-    pub fn build(self) -> Module {
+    fn resolve_functions(&mut self) {
+        let nimports = self.0
+            .imports
+            .iter()
+            .flat_map(|i| i.iter())
+            .filter(|i| match i.kind {
+                        ImportKind::Function(_) => true,
+                        _ => false,
+                    })
+            .count() as u32;
+        for f in self.0.codes.iter_mut().flat_map(|f| f.iter_mut()) {
+            f.resolve_functions(nimports)
+        }
+    }
+
+    pub fn build(mut self) -> Module {
+        self.resolve_functions();
         self.0
     }
 
@@ -310,7 +326,7 @@ impl CodeBuilder {
     }
     gen_builder!(Return, return_);
 
-    gen_builder!(Call { index: u32 }, call);
+    gen_builder!(Call { index: FunctionSpaceIndex }, call);
     gen_builder!(CallIndirect {
                      index: u32,
                      reserved: bool,

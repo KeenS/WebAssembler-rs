@@ -19,6 +19,7 @@ pub struct Module {
     pub data: Option<Vec<DataSegment>>,
 }
 
+
 impl Dump for Module {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
         let mut size = 0;
@@ -250,6 +251,15 @@ pub struct FunctionBody {
     pub locals: Vec<LocalEntry>,
     pub code: Code,
 }
+
+impl FunctionBody {
+    pub fn resolve_functions(&mut self, nimports: u32) {
+        for op in self.code.0.iter_mut() {
+            op.resolve_functions(nimports)
+        }
+    }
+}
+
 
 impl Dump for FunctionBody {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {

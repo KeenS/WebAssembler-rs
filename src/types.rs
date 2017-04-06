@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 use util::*;
 use ops::Op;
-use ::Dump;
+use Dump;
 
 #[derive(Debug, Clone)]
 pub enum ValueType {
@@ -200,13 +200,43 @@ impl Deref for ImportIndex {
     }
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct FunctionIndex(u32);
+/// restrict to this crate
+pub struct FunctionIndex(pub u32);
 impl Deref for FunctionIndex {
     type Target = u32;
     fn deref(&self) -> &u32 {
         &self.0
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum FunctionSpaceIndex {
+    Import(ImportIndex),
+    Function(FunctionIndex),
+}
+impl Deref for FunctionSpaceIndex {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        use self::FunctionSpaceIndex::*;
+        match *self {
+            Import(ref i) => &**i,
+            Function(ref f) => &**f,
+        }
+    }
+}
+impl Into<FunctionSpaceIndex> for ImportIndex {
+    fn into(self) -> FunctionSpaceIndex {
+        FunctionSpaceIndex::Import(self)
+    }
+}
+
+impl Into<FunctionSpaceIndex> for FunctionIndex {
+    fn into(self) -> FunctionSpaceIndex {
+        FunctionSpaceIndex::Function(self)
+    }
+}
+
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TableIndex(u32);
 impl Deref for TableIndex {

@@ -59,13 +59,18 @@ impl Dump for Module {
         do_section!(0x05, self.memories);
         do_section!(0x06, self.globals);
         do_section!(0x07, self.exports);
-        self.start
-            .as_ref()
-            .map(|index| {
-                     size += write_uint8(buf, 0x08);
-                     size += write_varuint32(buf, **index)
-                 })
-            .unwrap_or(());
+        {
+            for index in self.start {
+                v.clear();
+                let mut section_size = 0;
+                let sec = &mut v;
+                section_size += write_varuint32(sec, *index);
+
+                size += write_uint8(buf, 0x08);
+                size += write_varuint32(buf, section_size as u32);
+                size += write_slice(buf, &sec);
+            }
+        }
         do_section!(0x09, self.elements);
         do_section!(0x0a, self.codes);
         do_section!(0x0b, self.data);

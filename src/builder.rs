@@ -59,8 +59,8 @@ impl ModuleBuilder {
                       })
     }
 
-    fn resolve_functions(&mut self) {
-        let nimports = self.0
+    fn nimports(&self) -> u32 {
+        self.0
             .imports
             .iter()
             .flat_map(|i| i.iter())
@@ -68,7 +68,11 @@ impl ModuleBuilder {
                         ImportKind::Function(_) => true,
                         _ => false,
                     })
-            .count() as u32;
+            .count() as u32
+    }
+
+    fn resolve_functions(&mut self) {
+        let nimports = self.nimports();
         for f in self.0.codes.iter_mut().flat_map(|f| f.iter_mut()) {
             f.resolve_functions(nimports)
         }
@@ -76,6 +80,8 @@ impl ModuleBuilder {
 
     pub fn build(mut self) -> Module {
         self.resolve_functions();
+        let nimports = self.nimports();
+        self.0.start.as_mut().map(|i| i.0 += nimports);
         self.0
     }
 

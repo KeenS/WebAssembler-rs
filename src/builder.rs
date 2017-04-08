@@ -4,7 +4,6 @@ use module::*;
 use types::*;
 use ops;
 use ops::Op;
-use Dump;
 pub struct ModuleBuilder(Module);
 
 macro_rules! gen_add {
@@ -592,6 +591,12 @@ macro_rules! funtype {
         FuncType {
             params: ty_vec!($($params)*),
             ret: Some(ty!($ret))
+        }
+    };
+    (($($params: tt)*)) => {
+        FuncType {
+            params: ty_vec!($($params)*),
+            ret: None,
         }
     };
 }

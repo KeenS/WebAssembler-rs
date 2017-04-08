@@ -33,6 +33,7 @@ pub fn write_varuint1(buf: &mut Vec<u8>, u: u8) -> usize {
     write_uint8(buf, u)
 }
 
+#[allow(dead_code)]
 #[inline]
 pub fn write_varuint7(buf: &mut Vec<u8>, u: u8) -> usize {
     write_uint8(buf, u)

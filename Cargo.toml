@@ -1,6 +1,14 @@
 [package]
 name = "web-assembler"
 version = "0.1.0"
+license = "MIT OR Apache-2.0"
 authors = ["Sunrin SHIMURA (keen) <3han5chou7@gmail.com>"]
+description = "An in memory wasm assembler for Rust."
+readme = "README.md"
+documentation = "http://docs.rs/web-assembler"
+repository = "https://github.com/KeenS/WebAssembler-rs"
+keywords = ["wasm", "webassembly", "assembler"]
+categories = ["web-programming"]
+
 
 [dependencies]

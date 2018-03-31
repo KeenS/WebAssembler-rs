@@ -347,7 +347,7 @@ impl CodeBuilder {
 
     gen_builder!(Call { index: FunctionSpaceIndex }, call);
     gen_builder!(CallIndirect {
-                     index: u32,
+                     index: TypeIndex,
                      reserved: bool,
                  },
                  call_indirect);

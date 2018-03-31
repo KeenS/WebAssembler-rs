@@ -18,7 +18,7 @@ pub enum Op {
     Return,
     Call { index: FunctionSpaceIndex },
     // TODO: use table index
-    CallIndirect { index: u32, reserved: bool },
+    CallIndirect { index: TypeIndex, reserved: bool },
     Drop,
     Select,
     GetLocal(LocalIndex),
@@ -248,7 +248,7 @@ impl Dump for Op {
                  ref reserved,
              } => {
                 size += write_uint8(buf, 0x11);
-                size += write_varuint32(buf, *index);
+                size += write_varuint32(buf, **index);
                 size += write_varuint1(buf, *reserved as u8);
             }
             &Drop => size += write_uint8(buf, 0x1a),

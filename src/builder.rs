@@ -58,22 +58,36 @@ impl ModuleBuilder {
                       })
     }
 
+    pub fn function_index_of(&self, i: ImportIndex) -> Result<FunctionSpaceIndex, ImportIndex> {
+        self.0.function_index_of(i)
+    }
+
     fn nimports(&self) -> u32 {
         self.0
             .imports
             .iter()
             .flat_map(|i| i.iter())
-            .filter(|i| match i.kind {
-                        ImportKind::Function(_) => true,
-                        _ => false,
-                    })
+            .filter(|i|  i.kind.is_function())
             .count() as u32
     }
 
     fn resolve_functions(&mut self) {
         let nimports = self.nimports();
+        // resolve codes
         for f in self.0.codes.iter_mut().flat_map(|f| f.iter_mut()) {
             f.resolve_functions(nimports)
+        }
+        // resolve tables
+        for e in self.0.elements.iter_mut().flat_map(|e| e.iter_mut()) {
+            for index in e.elems.iter_mut() {
+                use InnerFunctionSpaceIndex::*;
+                match index.0 {
+                    Function(ref mut f) => {
+                        f.0 += nimports;
+                    }
+                    _ => (),
+                }
+            }
         }
     }
 
@@ -292,7 +306,7 @@ macro_rules! gen_memory_builder {
     ($variant: tt, $fname: ident, $align: expr) => {
         pub fn $fname(mut self, offset: u32) -> Self {
             let imm = ops::MemoryImmediate{
-                flags: $align,
+                flags: $align - 3,
                 offset: offset
             };
             self.code.push($variant{imm: imm});

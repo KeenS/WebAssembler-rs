@@ -184,8 +184,8 @@ impl Op {
     pub fn resolve_functions(&mut self, nimports: u32) {
         match *self {
             Op::Call { ref mut index } => {
-                use FunctionSpaceIndex::*;
-                match *index {
+                use InnerFunctionSpaceIndex::*;
+                match index.0 {
                     Function(ref mut f) => {
                         f.0 += nimports;
                     }

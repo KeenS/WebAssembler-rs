@@ -19,6 +19,24 @@ pub struct Module {
     pub data: Option<Vec<DataSegment>>,
 }
 
+impl Module {
+    pub fn function_index_of(&self, i: ImportIndex) -> Result<FunctionSpaceIndex, ImportIndex> {
+        match self.imports {
+            None => return Err(i),
+            Some(ref imports) => {
+                if let Some(&ImportEntry {kind: ImportKind::Function(_) ,..}) =imports.get(*i as usize) {
+                    let index = imports.iter()
+                        .take(*i as usize)
+                        .filter(|e|  e.kind.is_function())
+                        .count();
+                    Ok(FunctionSpaceIndex(InnerFunctionSpaceIndex::Import(ImportedFunctionIndex(index as u32))))
+                } else {
+                    return Err(i)
+                }
+            }
+        }
+    }
+}
 
 impl Dump for Module {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
@@ -91,6 +109,40 @@ pub enum ImportKind {
     Table(TableType),
     Memory(MemoryType),
     Global(GlobalType),
+}
+
+impl ImportKind {
+    pub fn is_function(&self) -> bool {
+        if let &ImportKind::Function(_) = self {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn is_table(&self) -> bool {
+        if let &ImportKind::Table(_) = self {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn is_memory(&self) -> bool {
+        if let &ImportKind::Memory(_) = self {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn is_global(&self) -> bool {
+        if let &ImportKind::Global(_) = self {
+            true
+        } else {
+            false
+        }
+    }
 }
 
 impl Dump for ImportEntry {
@@ -228,9 +280,8 @@ impl Dump for ExportKind {
 #[derive(Debug, Clone)]
 pub struct ElemSegment {
     pub index: TableIndex,
-    pub offest: InitExpr,
-    // TODO: use function indices
-    pub elems: Vec<u32>,
+    pub offset: InitExpr,
+    pub elems: Vec<FunctionSpaceIndex>,
 }
 
 impl Dump for ElemSegment {
@@ -238,14 +289,13 @@ impl Dump for ElemSegment {
         let mut size = 0;
 
         let elems = &self.elems;
-
+        assert_eq!(*self.index, 0);
         size += write_varuint32(buf, *self.index);
-        size += self.offest.dump(buf);
+        size += self.offset.dump(buf);
 
         size += write_varuint32(buf, elems.len() as u32);
         for e in elems.iter() {
-            size += write_varuint32(buf, *e);
-
+            size += write_varuint32(buf, **e);
         }
         size
     }

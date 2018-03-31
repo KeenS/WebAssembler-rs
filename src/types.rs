@@ -210,29 +210,31 @@ impl Deref for FunctionIndex {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum FunctionSpaceIndex {
-    Import(ImportIndex),
+pub struct ImportedFunctionIndex(pub u32);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum InnerFunctionSpaceIndex {
+    Import(ImportedFunctionIndex),
     Function(FunctionIndex),
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct FunctionSpaceIndex(pub InnerFunctionSpaceIndex);
+
 impl Deref for FunctionSpaceIndex {
     type Target = u32;
     fn deref(&self) -> &u32 {
-        use self::FunctionSpaceIndex::*;
-        match *self {
-            Import(ref i) => &**i,
+        use self::InnerFunctionSpaceIndex::*;
+        match self.0 {
+            Import(ref i) => &i.0,
             Function(ref f) => &**f,
         }
-    }
-}
-impl Into<FunctionSpaceIndex> for ImportIndex {
-    fn into(self) -> FunctionSpaceIndex {
-        FunctionSpaceIndex::Import(self)
     }
 }
 
 impl Into<FunctionSpaceIndex> for FunctionIndex {
     fn into(self) -> FunctionSpaceIndex {
-        FunctionSpaceIndex::Function(self)
+        FunctionSpaceIndex(InnerFunctionSpaceIndex::Function(self))
     }
 }
 

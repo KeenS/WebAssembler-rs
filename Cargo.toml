@@ -8,7 +8,7 @@ readme = "README.md"
 documentation = "https://docs.rs/web-assembler"
 repository = "https://github.com/KeenS/WebAssembler-rs"
 keywords = ["wasm", "webassembly", "assembler"]
-categories = ["web-programming"]
+categories = ["web-programming", "wasm"]
 
 
 [dependencies]

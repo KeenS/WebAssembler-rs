@@ -8,7 +8,7 @@ pub enum Op {
     Nop,
     Block { sig: BlockType },
     Loop { sig: BlockType },
-    If,
+    If { sig: BlockType },
     Else,
     End,
     // TODO: use relative block index
@@ -222,7 +222,10 @@ impl Dump for Op {
                 size += write_uint8(buf, 0x03);
                 size += sig.dump(buf);
             }
-            &If => size += write_uint8(buf, 0x04),
+            &If { ref sig } => {
+                size += write_uint8(buf, 0x04);
+                size += sig.dump(buf);
+            }
             &Else => size += write_uint8(buf, 0x05),
             &End => size += write_uint8(buf, 0x0b),
             &Br { ref depth } => {

@@ -330,7 +330,7 @@ impl CodeBuilder {
     gen_builder!(Nop, nop);
     gen_builder!(Block { sig: BlockType }, block);
     gen_builder!(Loop { sig: BlockType }, loop_);
-    gen_builder!(If, if_);
+    gen_builder!(If { sig: BlockType }, if_);
     gen_builder!(Else, else_);
     gen_builder!(End, end);
     gen_builder!(Br { depth: u32 }, br);

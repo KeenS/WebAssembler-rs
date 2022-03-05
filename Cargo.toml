@@ -9,6 +9,7 @@ documentation = "https://docs.rs/web-assembler"
 repository = "https://github.com/KeenS/WebAssembler-rs"
 keywords = ["wasm", "webassembly", "assembler"]
 categories = ["web-programming", "wasm"]
+exclude = [".cargo"]
 
 
 [dependencies]

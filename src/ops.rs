@@ -207,8 +207,7 @@ impl Dump for Op {
             size += imm.dump(buf);
 
             size
-
-        };
+        }
         let mut size = 0;
 
         match self {
@@ -247,9 +246,9 @@ impl Dump for Op {
             }
 
             &CallIndirect {
-                 ref index,
-                 ref reserved,
-             } => {
+                ref index,
+                ref reserved,
+            } => {
                 size += write_uint8(buf, 0x11);
                 size += write_varuint32(buf, **index);
                 size += write_varuint1(buf, *reserved as u8);
@@ -476,14 +475,11 @@ impl From<f64> for Op {
     }
 }
 
-
-
 #[derive(Debug, Clone)]
 pub struct MemoryImmediate {
     pub flags: u32,
     pub offset: u32,
 }
-
 
 impl Dump for MemoryImmediate {
     fn dump(&self, buf: &mut Vec<u8>) -> usize {
@@ -495,7 +491,6 @@ impl Dump for MemoryImmediate {
         size
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct BrTarget {

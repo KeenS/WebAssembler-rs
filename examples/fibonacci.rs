@@ -1,11 +1,10 @@
-#[macro_use]
 extern crate web_assembler as wasm;
 
-use wasm::builder::*;
-use wasm::*;
+use std::env;
 use std::fs::File;
 use std::io::Write;
-use std::env;
+use wasm::builder::*;
+use wasm::*;
 
 fn main() {
     let out_file = env::args().nth(1).expect("argument missing: output file");

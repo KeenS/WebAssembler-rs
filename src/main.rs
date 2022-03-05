@@ -1,19 +1,18 @@
-#[macro_use]
 extern crate web_assembler as wasm;
 
-use wasm::*;
 use wasm::builder::*;
+use wasm::*;
 
-use std::io::Write;
 use std::fs::File;
+use std::io::Write;
 
 fn main() {
     let mut mb = ModuleBuilder::new();
-    let f = mb.new_function(FunctionBuilder::new(funtype!((i32, i32) -> i32))
-                                .code(|cb, args| {
-                                          cb.constant(-3256).get_local(args[0]).i32_store(4)
-                                      })
-                                .build());
+    let f = mb.new_function(
+        FunctionBuilder::new(funtype!((i32, i32) -> i32))
+            .code(|cb, args| cb.constant(-3256).get_local(args[0]).i32_store(4))
+            .build(),
+    );
     mb.export("addTwo", f);
     let module = mb.build();
 
@@ -22,5 +21,4 @@ fn main() {
 
     let mut out = File::create(std::env::args().nth(1).unwrap()).unwrap();
     let _ = out.write(&buf).unwrap();
-
 }
